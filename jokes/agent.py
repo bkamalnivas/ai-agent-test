@@ -2,6 +2,7 @@ from smolagents import CodeAgent, LiteLLMModel, FinalAnswerTool
 from tools.write_joke import write_joke
 from tools.read_joke import read_joke
 from tools.list_jokes import list_total_jokes
+from smolagents import tool
 
 # Connect to local Ollama model
 llm_local = LiteLLMModel(
@@ -11,11 +12,34 @@ llm_local = LiteLLMModel(
 
 llm = LiteLLMModel(
     model_id="gemini/gemini-2.0-flash",
-    api_key="xxx"
 )
 
+@tool
+def unknown_request_handler() -> str:
+    """
+    Handles unrecognized or irrelevant user requests.
+
+    Returns:
+        A polite message saying the request can't be handled.
+    """
+    return "Sorry, I can only write, read, or list jokes. I can't help with that request."
+
+
+@tool
+def unknown_request_handler() -> str:
+    """
+    Handles unrecognized or unsupported user requests.
+
+    Returns:
+        A message telling the user what this assistant can do.
+    """
+    return (
+        "Sorry, I can't help with that. "
+        "I can only write a joke, read a joke by ID, or list how many jokes are saved."
+    )
+
 agent = CodeAgent(
-    tools=[write_joke, read_joke, list_total_jokes, FinalAnswerTool()],
+    tools=[write_joke, read_joke, list_total_jokes, unknown_request_handler, FinalAnswerTool()],
     model=llm
 )
 
@@ -27,6 +51,7 @@ agent.system_prompt = (
     "Once the task is complete, ALWAYS call FinalAnswerTool with the final response.\n"
     "Do NOT keep calling tools endlessly.\n"
     "Avoid chatting — always respond through tools."
+    "If a user request doesn't match any of these tools, respond by calling unknown_request_handler()."
 )
 
 
